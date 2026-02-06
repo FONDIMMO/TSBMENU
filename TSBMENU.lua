@@ -1,13 +1,12 @@
 --[[
-    PISHENAK FREE HUB v5
-    No CD + Minimize System
+    PISHENAK FREE HUB v5 (STABLE)
+    File: PremiumHumTSBScript.lua
 ]]
 
 local player = game:GetService("Players").LocalPlayer
 local uis = game:GetService("UserInputService")
-local runService = game:GetService("RunService")
 
--- Очистка старого интерфейса
+-- Удаляем старое GUI
 if player.PlayerGui:FindFirstChild("PishenakFreeHub") then
     player.PlayerGui.PishenakFreeHub:Destroy()
 end
@@ -24,49 +23,39 @@ main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 main.BackgroundTransparency = 0.2
 main.Active = true
 main.Draggable = true
-Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", main)
 
--- Кнопка Свернуть
+-- Кнопка Свернуть (Minimize)
 local isMinimized = false
-local minimizeBtn = Instance.new("TextButton", main)
-minimizeBtn.Size = UDim2.new(0, 30, 0, 30)
-minimizeBtn.Position = UDim2.new(1, -35, 0, 5)
-minimizeBtn.Text = "_"
-minimizeBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-minimizeBtn.TextColor3 = Color3.new(1, 1, 1)
-Instance.new("UICorner", minimizeBtn)
+local minBtn = Instance.new("TextButton", main)
+minBtn.Size = UDim2.new(0, 30, 0, 30)
+minBtn.Position = UDim2.new(1, -35, 0, 5)
+minBtn.Text = "_"
+minBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+minBtn.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", minBtn)
 
--- Заголовок
-local title = Instance.new("TextLabel", main)
-title.Size = UDim2.new(1, 0, 0, 40)
-title.Text = "PISHENAK FREE"
-title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-title.TextColor3 = Color3.new(1, 1, 1)
-title.Font = Enum.Font.GothamBold
-Instance.new("UICorner", title)
-
+-- Список функций
 local list = Instance.new("ScrollingFrame", main)
 list.Size = UDim2.new(1, -10, 1, -50)
 list.Position = UDim2.new(0, 5, 0, 45)
 list.BackgroundTransparency = 1
 list.BorderSizePixel = 0
-list.ScrollBarThickness = 2
 local layout = Instance.new("UIListLayout", list)
-layout.Padding = UDim.new(0, 8)
+layout.Padding = UDim.new(0, 5)
 layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- Логика сворачивания
-minimizeBtn.MouseButton1Click:Connect(function()
+-- Логика сворачивания (Упрощенная для стабильности)
+minBtn.MouseButton1Click:Connect(function()
     isMinimized = not isMinimized
     if isMinimized then
         list.Visible = false
-        main:TweenSize(UDim2.new(0, 220, 0, 40), "Out", "Quad", 0.3, true)
-        minimizeBtn.Text = "+"
+        main.Size = UDim2.new(0, 220, 0, 40)
+        minBtn.Text = "+"
     else
-        main:TweenSize(UDim2.new(0, 220, 0, 320), "Out", "Quad", 0.3, true)
-        task.wait(0.3)
+        main.Size = UDim2.new(0, 220, 0, 320)
         list.Visible = true
-        minimizeBtn.Text = "_"
+        minBtn.Text = "_"
     end
 end)
 
@@ -76,21 +65,17 @@ local function addBtn(text, callback)
     b.Text = text
     b.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     b.TextColor3 = Color3.new(1, 1, 1)
-    b.Font = Enum.Font.Gotham
     Instance.new("UICorner", b)
     b.MouseButton1Click:Connect(function() callback(b) end)
 end
 
--- 1. NO CD (Без перезарядки атак)
+-- 1. NO CD
 local noCdOn = false
 addBtn("No CD: OFF", function(btn)
     noCdOn = not noCdOn
     btn.Text = noCdOn and "No CD: ON" or "No CD: OFF"
-    btn.TextColor3 = noCdOn and Color3.new(0, 1, 0) or Color3.new(1, 1, 1)
-    
     task.spawn(function()
         while noCdOn do
-            -- Убираем задержки в анимациях и локальных скриптах атак
             pcall(function()
                 for _, v in pairs(player.Character:GetDescendants()) do
                     if v:IsA("NumberValue") and (v.Name:find("Cooldown") or v.Name:find("CD")) then
@@ -98,7 +83,7 @@ addBtn("No CD: OFF", function(btn)
                     end
                 end
             end)
-            task.wait(0.1)
+            task.wait(0.2)
         end
     end)
 end)
@@ -108,22 +93,19 @@ local espOn = false
 addBtn("RGB ESP: OFF", function(btn)
     espOn = not espOn
     btn.Text = espOn and "RGB ESP: ON" or "RGB ESP: OFF"
-    btn.TextColor3 = espOn and Color3.new(0, 1, 0) or Color3.new(1, 1, 1)
-    
     task.spawn(function()
         while espOn do
             local color = Color3.fromHSV(tick() % 5 / 5, 1, 1)
-            for _, p in pairs(game:GetService("Players"):GetPlayers()) do
+            for _, p in pairs(game.Players:GetPlayers()) do
                 if p ~= player and p.Character then
                     local h = p.Character:FindFirstChild("FreeESP") or Instance.new("Highlight", p.Character)
                     h.Name = "FreeESP"
                     h.FillColor = color
-                    h.OutlineColor = Color3.new(1, 1, 1)
                 end
             end
             task.wait(0.1)
         end
-        for _, p in pairs(game:GetService("Players"):GetPlayers()) do
+        for _, p in pairs(game.Players:GetPlayers()) do
             if p.Character and p.Character:FindFirstChild("FreeESP") then p.Character.FreeESP:Destroy() end
         end
     end)
@@ -134,12 +116,9 @@ local flying = false
 addBtn("Fly: OFF", function(btn)
     flying = not flying
     btn.Text = flying and "Fly: ON" or "Fly: OFF"
-    btn.TextColor3 = flying and Color3.new(0, 1, 0) or Color3.new(1, 1, 1)
-    
     if flying then
         local bv = Instance.new("BodyVelocity", player.Character.HumanoidRootPart)
-        bv.Name = "FlyVel"
-        bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bv.MaxForce = Vector3.new(1e6, 1e6, 1e6)
         task.spawn(function()
             while flying do
                 bv.Velocity = workspace.CurrentCamera.CFrame.LookVector * 100
@@ -154,5 +133,3 @@ end)
 uis.InputBegan:Connect(function(k, g)
     if not g and k.KeyCode == Enum.KeyCode.L then main.Visible = not main.Visible end
 end)
-
-print("Pishenak v5 Loaded!")

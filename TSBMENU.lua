@@ -1,207 +1,137 @@
-local player = game.Players.LocalPlayer
-local mouse = player:GetMouse()
+--[[
+    PISHENAK FREE HUB (Universal Edition)
+    Name: PremiumHumTSBScript.lua
+]]
+
+local player = game:GetService("Players").LocalPlayer
 local uis = game:GetService("UserInputService")
-local tweenService = game:GetService("TweenService")
 
--- Создаем GUI
-local screenGui = Instance.new("ScreenGui", player.PlayerGui)
-screenGui.Name = "TSB_Mega_Hub_Pishenak"
-screenGui.ResetOnSpawn = false
-
--- Главная панель
-local mainFrame = Instance.new("Frame", screenGui)
-mainFrame.Size = UDim2.new(0, 220, 0, 320)
-mainFrame.Position = UDim2.new(0.5, -110, 0.5, -160)
-mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-mainFrame.BorderSizePixel = 0
-mainFrame.ClipsDescendants = true
-mainFrame.Active = true
-mainFrame.Draggable = true
-
-Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
-
--- Заголовок
-local title = Instance.new("TextLabel", mainFrame)
-title.Size = UDim2.new(1, 0, 0, 45)
-title.Text = "TSB: Pishenak Hub v3"
-title.TextColor3 = Color3.new(1, 1, 1)
-title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-title.Font = Enum.Font.GothamBold
-title.TextSize = 14
-
--- Контейнер для кнопок
-local container = Instance.new("Frame", mainFrame)
-container.Size = UDim2.new(1, 0, 1, -50)
-container.Position = UDim2.new(0, 0, 0, 50)
-container.BackgroundTransparency = 1
-
-local layout = Instance.new("UIListLayout", container)
-layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-layout.Padding = UDim.new(0, 8)
-
--- Кнопка сворачивания (Стрелка)
-local toggleBtn = Instance.new("TextButton", screenGui)
-toggleBtn.Size = UDim2.new(0, 30, 0, 30)
-toggleBtn.Position = mainFrame.Position + UDim2.new(0, 225, 0, 0)
-toggleBtn.Text = "V"
-toggleBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-toggleBtn.TextColor3 = Color3.new(1, 1, 1)
-toggleBtn.Font = Enum.Font.GothamBold
-Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(1, 0)
-
--- Вспомогательная функция для дизайна кнопок
-local function styleButton(btn)
-    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    btn.TextColor3 = Color3.new(1, 1, 1)
-    btn.Font = Enum.Font.Gotham
-    btn.TextSize = 12
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+-- Удаляем старое меню при перезапуске
+if player.PlayerGui:FindFirstChild("PishenakFreeHub") then
+    player.PlayerGui.PishenakFreeHub:Destroy()
 end
 
--- 1. ТЕЛЕПОРТ К БЛИЖАЙШЕЙ МУСОРКЕ
-local trashBtn = Instance.new("TextButton", container)
-trashBtn.Size = UDim2.new(0.9, 0, 0, 40)
-trashBtn.Text = "Найти ближ. мусорку"
-styleButton(trashBtn)
+local sg = Instance.new("ScreenGui", player.PlayerGui)
+sg.Name = "PishenakFreeHub"
+sg.ResetOnSpawn = false
 
-trashBtn.MouseButton1Click:Connect(function()
-    local nearest = nil
-    local minDist = math.huge
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj.Name:lower():find("trash") and obj:IsA("BasePart") then
-            local d = (player.Character.HumanoidRootPart.Position - obj.Position).Magnitude
-            if d < minDist then
-                minDist = d
-                nearest = obj
+-- ГЛАВНОЕ ОКНО
+local main = Instance.new("Frame", sg)
+main.Size = UDim2.new(0, 220, 0, 320)
+main.Position = UDim2.new(0.5, -110, 0.5, -160)
+main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+main.BackgroundTransparency = 0.2
+main.Active = true
+main.Draggable = true
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
+
+-- Заголовок
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1, 0, 0, 45)
+title.Text = "PISHENAK FREE v4"
+title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Font = Enum.Font.GothamBold
+Instance.new("UICorner", title)
+
+-- Список функций
+local list = Instance.new("ScrollingFrame", main)
+list.Size = UDim2.new(1, -10, 1, -50)
+list.Position = UDim2.new(0, 5, 0, 45)
+list.BackgroundTransparency = 1
+list.BorderSizePixel = 0
+list.ScrollBarThickness = 2
+local layout = Instance.new("UIListLayout", list)
+layout.Padding = UDim.new(0, 8)
+layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+-- Функция для создания кнопок
+local function addBtn(text, color, callback)
+    local b = Instance.new("TextButton", list)
+    b.Size = UDim2.new(0.9, 0, 0, 35)
+    b.Text = text
+    b.BackgroundColor3 = color
+    b.TextColor3 = Color3.new(1, 1, 1)
+    b.Font = Enum.Font.Gotham
+    Instance.new("UICorner", b)
+    b.MouseButton1Click:Connect(function() callback(b) end)
+end
+
+-- 1. RGB ESP (Highlight)
+local espOn = false
+addBtn("RGB ESP: OFF", Color3.fromRGB(50, 50, 50), function(btn)
+    espOn = not espOn
+    btn.Text = espOn and "RGB ESP: ON" or "RGB ESP: OFF"
+    btn.TextColor3 = espOn and Color3.new(0, 1, 0) or Color3.new(1, 1, 1)
+    
+    task.spawn(function()
+        while espOn do
+            local rainbow = Color3.fromHSV(tick() % 5 / 5, 1, 1)
+            for _, p in pairs(game:GetService("Players"):GetPlayers()) do
+                if p ~= player and p.Character then
+                    local h = p.Character:FindFirstChild("FreeESP") or Instance.new("Highlight", p.Character)
+                    h.Name = "FreeESP"
+                    h.FillColor = rainbow
+                    h.OutlineColor = Color3.new(1, 1, 1)
+                end
+            end
+            task.wait(0.1)
+        end
+        -- Чистка
+        for _, p in pairs(game:GetService("Players"):GetPlayers()) do
+            if p.Character and p.Character:FindFirstChild("FreeESP") then
+                p.Character.FreeESP:Destroy()
             end
         end
-    end
-    if nearest then
-        player.Character.HumanoidRootPart.CFrame = nearest.CFrame + Vector3.new(0, 3, 0)
-    end
+    end)
 end)
 
--- 2. СИСТЕМА ПОЛЕТА
+-- 2. Телепорт к ближайшей мусорке
+addBtn("Ближ. мусорка", Color3.fromRGB(50, 50, 50), function()
+    local target = nil
+    local minDist = 999999
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v.Name:lower():find("trash") and v:IsA("BasePart") then
+            local d = (player.Character.HumanoidRootPart.Position - v.Position).Magnitude
+            if d < minDist then minDist = d target = v end
+        end
+    end
+    if target then player.Character.HumanoidRootPart.CFrame = target.CFrame + Vector3.new(0, 3, 0) end
+end)
+
+-- 3. Улучшенный полет
 local flying = false
-local flySpeed = 50
-local bv, bg
-
-local flyBtn = Instance.new("TextButton", container)
-flyBtn.Size = UDim2.new(0.9, 0, 0, 40)
-flyBtn.Text = "Полет: ВЫКЛ"
-styleButton(flyBtn)
-
-flyBtn.MouseButton1Click:Connect(function()
+addBtn("Полет: OFF", Color3.fromRGB(50, 50, 50), function(btn)
     flying = not flying
+    btn.Text = flying and "Полет: ON" or "Полет: OFF"
+    btn.TextColor3 = flying and Color3.new(0, 1, 0) or Color3.new(1, 1, 1)
+    
+    local root = player.Character:FindFirstChild("HumanoidRootPart")
     if flying then
-        flyBtn.Text = "Полет: ВКЛ"
-        flyBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-        
-        local root = player.Character:FindFirstChild("HumanoidRootPart")
-        if not root then return end
-        
-        bv = Instance.new("BodyVelocity", root)
+        local bv = Instance.new("BodyVelocity", root)
+        bv.Name = "FlyVel"
         bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bv.Velocity = Vector3.new(0,0,0)
-        
-        bg = Instance.new("BodyGyro", root)
-        bg.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-        bg.CFrame = root.CFrame
-        
-        player.Character.Humanoid.PlatformStand = true
-        
         task.spawn(function()
             while flying do
-                local cam = workspace.CurrentCamera.CFrame
-                local dir = Vector3.new(0,0,0)
-                if uis:IsKeyDown(Enum.KeyCode.W) then dir = dir + cam.LookVector end
-                if uis:IsKeyDown(Enum.KeyCode.S) then dir = dir - cam.LookVector end
-                if uis:IsKeyDown(Enum.KeyCode.A) then dir = dir - cam.RightVector end
-                if uis:IsKeyDown(Enum.KeyCode.D) then dir = dir + cam.RightVector end
-                if uis:IsKeyDown(Enum.KeyCode.Space) then dir = dir + Vector3.new(0,1,0) end
-                if uis:IsKeyDown(Enum.KeyCode.LeftShift) then dir = dir - Vector3.new(0,1,0) end
-                bv.Velocity = dir * flySpeed
-                bg.CFrame = cam
+                bv.Velocity = workspace.CurrentCamera.CFrame.LookVector * 100
                 task.wait()
             end
+            bv:Destroy()
         end)
-    else
-        flyBtn.Text = "Полет: ВЫКЛ"
-        flyBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        if bv then bv:Destroy() end
-        if bg then bg:Destroy() end
-        if player.Character:FindFirstChild("Humanoid") then
-            player.Character.Humanoid.PlatformStand = false
-        end
     end
 end)
 
--- 3. МЕНЮ ИГРОКОВ
-local pListFrame = Instance.new("Frame", screenGui)
-pListFrame.Size = UDim2.new(0, 200, 0, 250)
-pListFrame.Position = mainFrame.Position + UDim2.new(0, -210, 0, 0)
-pListFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-pListFrame.Visible = false
-Instance.new("UICorner", pListFrame)
-
-local closePList = Instance.new("TextButton", pListFrame)
-closePList.Size = UDim2.new(0, 25, 0, 25)
-closePList.Position = UDim2.new(1, -28, 0, 3)
-closePList.Text = "X"
-closePList.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-closePList.TextColor3 = Color3.new(1, 1, 1)
-Instance.new("UICorner", closePList).CornerRadius = UDim.new(1,0)
-closePList.MouseButton1Click:Connect(function() pListFrame.Visible = false end)
-
-local scroll = Instance.new("ScrollingFrame", pListFrame)
-scroll.Size = UDim2.new(1, -10, 1, -40)
-scroll.Position = UDim2.new(0, 5, 0, 35)
-scroll.BackgroundTransparency = 1
-local sLayout = Instance.new("UIListLayout", scroll)
-sLayout.Padding = UDim.new(0, 5)
-
-local playersBtn = Instance.new("TextButton", container)
-playersBtn.Size = UDim2.new(0.9, 0, 0, 40)
-playersBtn.Text = "Список игроков"
-styleButton(playersBtn)
-
-playersBtn.MouseButton1Click:Connect(function()
-    pListFrame.Visible = not pListFrame.Visible
-    for _, c in pairs(scroll:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
-    for _, p in pairs(game.Players:GetPlayers()) do
-        if p ~= player then
-            local b = Instance.new("TextButton", scroll)
-            b.Size = UDim2.new(1, -10, 0, 30)
-            b.Text = p.DisplayName
-            styleButton(b)
-            b.MouseButton1Click:Connect(function()
-                if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                    player.Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
-                end
-            end)
-            scroll.CanvasSize = UDim2.new(0, 0, 0, sLayout.AbsoluteContentSize.Y)
-        end
-    end
+-- 4. Speed Hack (Бег)
+local speedOn = false
+addBtn("Быстрый бег: OFF", Color3.fromRGB(50, 50, 50), function(btn)
+    speedOn = not speedOn
+    btn.Text = speedOn and "Быстрый бег: ON" or "Быстрый бег: OFF"
+    player.Character.Humanoid.WalkSpeed = speedOn and 100 or 16
 end)
 
--- АНИМАЦИИ И УПРАВЛЕНИЕ
-local opened = true
-toggleBtn.MouseButton1Click:Connect(function()
-    opened = not opened
-    local targetSize = opened and UDim2.new(0, 220, 0, 320) or UDim2.new(0, 220, 0, 45)
-    tweenService:Create(mainFrame, TweenInfo.new(0.3), {Size = targetSize}):Play()
-    container.Visible = opened
-    if not opened then pListFrame.Visible = false end
-    toggleBtn.Rotation = opened and 0 or 180
+-- Скрытие на L
+uis.InputBegan:Connect(function(k, g)
+    if not g and k.KeyCode == Enum.KeyCode.L then main.Visible = not main.Visible end
 end)
 
-mainFrame:GetPropertyChangedSignal("Position"):Connect(function()
-    toggleBtn.Position = mainFrame.Position + UDim2.new(0, 225, 0, 0)
-    pListFrame.Position = mainFrame.Position + UDim2.new(0, -210, 0, 0)
-end)
-
-uis.InputBegan:Connect(function(i, p)
-    if not p and i.KeyCode == Enum.KeyCode.L then screenGui.Enabled = not screenGui.Enabled end
-end)
-
-print("TSB Script by Pishenak Loaded!")
+print("Pishenak Free Hub Loaded!")

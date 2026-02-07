@@ -1,170 +1,164 @@
 local player = game:GetService("Players").LocalPlayer
 local uis = game:GetService("UserInputService")
-local runService = game:GetService("RunService")
 
--- Удаление старого GUI
-if player.PlayerGui:FindFirstChild("PishenakFreeHub") then
-    player.PlayerGui.PishenakFreeHub:Destroy()
+-- Удаляем старое GUI
+if player.PlayerGui:FindFirstChild("PishenakModernHub") then
+    player.PlayerGui.PishenakModernHub:Destroy()
 end
 
 local sg = Instance.new("ScreenGui", player.PlayerGui)
-sg.Name = "PishenakFreeHub"
+sg.Name = "PishenakModernHub"
 sg.ResetOnSpawn = false
 
 -- ГЛАВНОЕ ОКНО
 local main = Instance.new("Frame", sg)
-main.Size = UDim2.new(0, 220, 0, 350)
-main.Position = UDim2.new(0.5, -110, 0.5, -175)
-main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-main.BackgroundTransparency = 0.2
+main.Size = UDim2.new(0, 500, 0, 350)
+main.Position = UDim2.new(0.5, -250, 0.5, -175)
+main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+main.BorderSizePixel = 0
 main.Active = true
 main.Draggable = true
-Instance.new("UICorner", main)
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
 
--- Кнопка Свернуть
-local isMinimized = false
-local minBtn = Instance.new("TextButton", main)
-minBtn.Size = UDim2.new(0, 30, 0, 30)
-minBtn.Position = UDim2.new(1, -35, 0, 5)
-minBtn.Text = "_"
-minBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-minBtn.TextColor3 = Color3.new(1, 1, 1)
-Instance.new("UICorner", minBtn)
+-- БОКОВАЯ ПАНЕЛЬ (Sidebar)
+local sidebar = Instance.new("Frame", main)
+sidebar.Size = UDim2.new(0, 130, 1, 0)
+sidebar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+sidebar.BorderSizePixel = 0
+local sideCorner = Instance.new("UICorner", sidebar)
+sideCorner.CornerRadius = UDim.new(0, 10)
 
-local list = Instance.new("ScrollingFrame", main)
-list.Size = UDim2.new(1, -10, 1, -50)
-list.Position = UDim2.new(0, 5, 0, 45)
-list.BackgroundTransparency = 1
-list.BorderSizePixel = 0
-list.ScrollBarThickness = 2
-local layout = Instance.new("UIListLayout", list)
-layout.Padding = UDim.new(0, 5)
-layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+-- Заголовок в сайдбаре
+local hubTitle = Instance.new("TextLabel", sidebar)
+hubTitle.Size = UDim2.new(1, 0, 0, 50)
+hubTitle.Text = "PISHENAK HUB"
+hubTitle.TextColor3 = Color3.new(1, 1, 1)
+hubTitle.Font = Enum.Font.GothamBold
+hubTitle.TextSize = 14
+hubTitle.BackgroundTransparency = 1
 
-minBtn.MouseButton1Click:Connect(function()
-    isMinimized = not isMinimized
-    if isMinimized then
-        list.Visible = false
-        main.Size = UDim2.new(0, 220, 0, 40)
-        minBtn.Text = "+"
-    else
-        main.Size = UDim2.new(0, 220, 0, 350)
-        list.Visible = true
-        minBtn.Text = "_"
-    end
-end)
+-- КОНТЕНТНАЯ ЧАСТЬ (Справа)
+local container = Instance.new("Frame", main)
+container.Size = UDim2.new(1, -140, 1, -20)
+container.Position = UDim2.new(0, 135, 0, 10)
+container.BackgroundTransparency = 1
 
-local function addBtn(text, callback)
-    local b = Instance.new("TextButton", list)
-    b.Size = UDim2.new(0.9, 0, 0, 35)
-    b.Text = text
-    b.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-    b.TextColor3 = Color3.new(1, 1, 1)
-    b.Font = Enum.Font.Gotham
-    Instance.new("UICorner", b)
-    b.MouseButton1Click:Connect(function() callback(b) end)
+-- Списки разделов (Для примера сделаем пока один общий)
+local page = Instance.new("ScrollingFrame", container)
+page.Size = UDim2.new(1, 0, 1, 0)
+page.BackgroundTransparency = 1
+page.BorderSizePixel = 0
+page.ScrollBarThickness = 2
+local layout = Instance.new("UIListLayout", page)
+layout.Padding = UDim.new(0, 8)
+
+-- ФУНКЦИЯ СОЗДАНИЯ ПЕРЕКЛЮЧАТЕЛЯ (Toggle)
+local function addToggle(text, default, callback)
+    local frame = Instance.new("Frame", page)
+    frame.Size = UDim2.new(1, -5, 0, 40)
+    frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    Instance.new("UICorner", frame)
+
+    local label = Instance.new("TextLabel", frame)
+    label.Size = UDim2.new(0.7, 0, 1, 0)
+    label.Position = UDim2.new(0, 10, 0, 0)
+    label.Text = text
+    label.TextColor3 = Color3.new(0.8, 0.8, 0.8)
+    label.Font = Enum.Font.Gotham
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.BackgroundTransparency = 1
+
+    local btn = Instance.new("TextButton", frame)
+    btn.Size = UDim2.new(0, 50, 0, 24)
+    btn.Position = UDim2.new(1, -60, 0.5, -12)
+    btn.BackgroundColor3 = default and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(60, 60, 60)
+    btn.Text = ""
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 12)
+
+    local state = default
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        btn.BackgroundColor3 = state and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(60, 60, 60)
+        callback(state)
+    end)
 end
 
--- 1. УЛУЧШЕННЫЙ NO CD (Перезагрузка анимаций атак)
-local noCdOn = false
-addBtn("No CD: OFF", function(btn)
-    noCdOn = not noCdOn
-    btn.Text = noCdOn and "No CD: ON" or "No CD: OFF"
-    btn.TextColor3 = noCdOn and Color3.new(0, 1, 0) or Color3.new(1, 1, 1)
-    
-    task.spawn(function()
-        while noCdOn do
-            pcall(function()
-                -- Метод 1: Сброс локальных кулдаунов в атрибутах
-                for _, v in pairs(player.Character:GetAttributes()) do
-                    if v:find("Cooldown") or v:find("CD") then
-                        player.Character:SetAttribute(v, 0)
-                    end
-                end
-                -- Метод 2: Остановка анимаций стана (чтобы можно было сразу бить снова)
-                local hum = player.Character:FindFirstChildOfClass("Humanoid")
-                if hum then
-                    for _, anim in pairs(hum:GetPlayingAnimationTracks()) do
-                        if anim.Name:lower():find("cooldown") or anim.Name:lower():find("attack") then
-                            anim:Stop()
-                        end
-                    end
-                end
-            end)
-            task.wait(0.05)
-        end
-    end)
-end)
+-- ФУНКЦИЯ СОЗДАНИЯ КНОПКИ (Button)
+local function addAction(text, callback)
+    local btn = Instance.new("TextButton", page)
+    btn.Size = UDim2.new(1, -5, 0, 35)
+    btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    btn.Text = text
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.Gotham
+    Instance.new("UICorner", btn)
+    btn.MouseButton1Click:Connect(callback)
+end
 
--- 2. INFINITE DASH (Q спам)
-local infDash = false
-addBtn("Inf Dash: OFF", function(btn)
-    infDash = not infDash
-    btn.Text = infDash and "Inf Dash: ON" or "Inf Dash: OFF"
+-- НАПОЛНЕНИЕ ФУНКЦИЯМИ
+addToggle("No Cooldown", false, function(v)
+    _G.NoCD = v
     task.spawn(function()
-        while infDash do
+        while _G.NoCD do
             pcall(function()
-                player.Character:SetAttribute("DashCooldown", 0)
+                player.Character:SetAttribute("Cooldown", 0)
             end)
             task.wait(0.1)
         end
     end)
 end)
 
--- 3. FPS BOOSTER
-addBtn("FPS Booster", function()
-    for _, v in pairs(workspace:GetDescendants()) do
-        if v:IsA("PostProcessEffect") or v:IsA("ParticleEmitter") or v:IsA("Trail") then
-            v.Enabled = false
+addToggle("Infinite Dash", false, function(v)
+    _G.InfDash = v
+    task.spawn(function()
+        while _G.InfDash do
+            pcall(function() player.Character:SetAttribute("DashCooldown", 0) end)
+            task.wait(0.1)
         end
-        if v:IsA("Decal") or v:IsA("Texture") then
-            v:Destroy()
-        end
-    end
-    print("FPS Boost Activated")
+    end)
 end)
 
--- 4. RGB ESP
-local espOn = false
-addBtn("RGB ESP: OFF", function(btn)
-    espOn = not espOn
-    btn.Text = espOn and "RGB ESP: ON" or "RGB ESP: OFF"
+addToggle("RGB ESP", false, function(v)
+    _G.ESP = v
     task.spawn(function()
-        while espOn do
+        while _G.ESP do
             local color = Color3.fromHSV(tick() % 5 / 5, 1, 1)
             for _, p in pairs(game.Players:GetPlayers()) do
                 if p ~= player and p.Character then
-                    local h = p.Character:FindFirstChild("FreeESP") or Instance.new("Highlight", p.Character)
-                    h.Name = "FreeESP"
+                    local h = p.Character:FindFirstChild("ModernESP") or Instance.new("Highlight", p.Character)
+                    h.Name = "ModernESP"
                     h.FillColor = color
                 end
             end
             task.wait(0.1)
         end
         for _, p in pairs(game.Players:GetPlayers()) do
-            if p.Character and p.Character:FindFirstChild("FreeESP") then p.Character.FreeESP:Destroy() end
+            if p.Character and p.Character:FindFirstChild("ModernESP") then p.Character.ModernESP:Destroy() end
         end
     end)
 end)
 
--- 5. Fly
-local flying = false
-addBtn("Fly: OFF", function(btn)
-    flying = not flying
-    btn.Text = flying and "Fly: ON" or "Fly: OFF"
-    if flying then
-        local bv = Instance.new("BodyVelocity", player.Character.HumanoidRootPart)
-        bv.MaxForce = Vector3.new(1e6, 1e6, 1e6)
-        task.spawn(function()
-            while flying do
-                bv.Velocity = workspace.CurrentCamera.CFrame.LookVector * 100
-                task.wait()
-            end
-            bv:Destroy()
-        end)
+addAction("Teleport to Trash", function()
+    local root = player.Character:FindFirstChild("HumanoidRootPart")
+    local target = nil
+    local minDist = 999999
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v.Name:lower():find("trash") and v:IsA("BasePart") then
+            local d = (root.Position - v.Position).Magnitude
+            if d < minDist then minDist = d target = v end
+        end
+    end
+    if target then root.CFrame = target.CFrame + Vector3.new(0, 3, 0) end
+end)
+
+addAction("FPS Booster", function()
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("PostProcessEffect") or v:IsA("ParticleEmitter") or v:IsA("Trail") then v.Enabled = false end
+        if v:IsA("Decal") or v:IsA("Texture") then v:Destroy() end
     end
 end)
 
+-- СКРЫТИЕ (L)
 uis.InputBegan:Connect(function(k, g)
     if not g and k.KeyCode == Enum.KeyCode.L then main.Visible = not main.Visible end
 end)

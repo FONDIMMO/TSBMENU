@@ -1,12 +1,8 @@
---[[
-    PISHENAK FREE HUB v5 (STABLE)
-    File: PremiumHumTSBScript.lua
-]]
-
 local player = game:GetService("Players").LocalPlayer
 local uis = game:GetService("UserInputService")
+local runService = game:GetService("RunService")
 
--- Удаляем старое GUI
+-- Удаление старого GUI
 if player.PlayerGui:FindFirstChild("PishenakFreeHub") then
     player.PlayerGui.PishenakFreeHub:Destroy()
 end
@@ -17,15 +13,15 @@ sg.ResetOnSpawn = false
 
 -- ГЛАВНОЕ ОКНО
 local main = Instance.new("Frame", sg)
-main.Size = UDim2.new(0, 220, 0, 320)
-main.Position = UDim2.new(0.5, -110, 0.5, -160)
+main.Size = UDim2.new(0, 220, 0, 350)
+main.Position = UDim2.new(0.5, -110, 0.5, -175)
 main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 main.BackgroundTransparency = 0.2
 main.Active = true
 main.Draggable = true
 Instance.new("UICorner", main)
 
--- Кнопка Свернуть (Minimize)
+-- Кнопка Свернуть
 local isMinimized = false
 local minBtn = Instance.new("TextButton", main)
 minBtn.Size = UDim2.new(0, 30, 0, 30)
@@ -35,17 +31,16 @@ minBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 minBtn.TextColor3 = Color3.new(1, 1, 1)
 Instance.new("UICorner", minBtn)
 
--- Список функций
 local list = Instance.new("ScrollingFrame", main)
 list.Size = UDim2.new(1, -10, 1, -50)
 list.Position = UDim2.new(0, 5, 0, 45)
 list.BackgroundTransparency = 1
 list.BorderSizePixel = 0
+list.ScrollBarThickness = 2
 local layout = Instance.new("UIListLayout", list)
 layout.Padding = UDim.new(0, 5)
 layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- Логика сворачивания (Упрощенная для стабильности)
 minBtn.MouseButton1Click:Connect(function()
     isMinimized = not isMinimized
     if isMinimized then
@@ -53,7 +48,7 @@ minBtn.MouseButton1Click:Connect(function()
         main.Size = UDim2.new(0, 220, 0, 40)
         minBtn.Text = "+"
     else
-        main.Size = UDim2.new(0, 220, 0, 320)
+        main.Size = UDim2.new(0, 220, 0, 350)
         list.Visible = true
         minBtn.Text = "_"
     end
@@ -65,30 +60,71 @@ local function addBtn(text, callback)
     b.Text = text
     b.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     b.TextColor3 = Color3.new(1, 1, 1)
+    b.Font = Enum.Font.Gotham
     Instance.new("UICorner", b)
     b.MouseButton1Click:Connect(function() callback(b) end)
 end
 
--- 1. NO CD
+-- 1. УЛУЧШЕННЫЙ NO CD (Перезагрузка анимаций атак)
 local noCdOn = false
 addBtn("No CD: OFF", function(btn)
     noCdOn = not noCdOn
     btn.Text = noCdOn and "No CD: ON" or "No CD: OFF"
+    btn.TextColor3 = noCdOn and Color3.new(0, 1, 0) or Color3.new(1, 1, 1)
+    
     task.spawn(function()
         while noCdOn do
             pcall(function()
-                for _, v in pairs(player.Character:GetDescendants()) do
-                    if v:IsA("NumberValue") and (v.Name:find("Cooldown") or v.Name:find("CD")) then
-                        v.Value = 0
+                -- Метод 1: Сброс локальных кулдаунов в атрибутах
+                for _, v in pairs(player.Character:GetAttributes()) do
+                    if v:find("Cooldown") or v:find("CD") then
+                        player.Character:SetAttribute(v, 0)
+                    end
+                end
+                -- Метод 2: Остановка анимаций стана (чтобы можно было сразу бить снова)
+                local hum = player.Character:FindFirstChildOfClass("Humanoid")
+                if hum then
+                    for _, anim in pairs(hum:GetPlayingAnimationTracks()) do
+                        if anim.Name:lower():find("cooldown") or anim.Name:lower():find("attack") then
+                            anim:Stop()
+                        end
                     end
                 end
             end)
-            task.wait(0.2)
+            task.wait(0.05)
         end
     end)
 end)
 
--- 2. RGB ESP
+-- 2. INFINITE DASH (Q спам)
+local infDash = false
+addBtn("Inf Dash: OFF", function(btn)
+    infDash = not infDash
+    btn.Text = infDash and "Inf Dash: ON" or "Inf Dash: OFF"
+    task.spawn(function()
+        while infDash do
+            pcall(function()
+                player.Character:SetAttribute("DashCooldown", 0)
+            end)
+            task.wait(0.1)
+        end
+    end)
+end)
+
+-- 3. FPS BOOSTER
+addBtn("FPS Booster", function()
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("PostProcessEffect") or v:IsA("ParticleEmitter") or v:IsA("Trail") then
+            v.Enabled = false
+        end
+        if v:IsA("Decal") or v:IsA("Texture") then
+            v:Destroy()
+        end
+    end
+    print("FPS Boost Activated")
+end)
+
+-- 4. RGB ESP
 local espOn = false
 addBtn("RGB ESP: OFF", function(btn)
     espOn = not espOn
@@ -111,7 +147,7 @@ addBtn("RGB ESP: OFF", function(btn)
     end)
 end)
 
--- 3. Fly
+-- 5. Fly
 local flying = false
 addBtn("Fly: OFF", function(btn)
     flying = not flying
@@ -129,7 +165,6 @@ addBtn("Fly: OFF", function(btn)
     end
 end)
 
--- Скрыть/Показать на L
 uis.InputBegan:Connect(function(k, g)
     if not g and k.KeyCode == Enum.KeyCode.L then main.Visible = not main.Visible end
 end)

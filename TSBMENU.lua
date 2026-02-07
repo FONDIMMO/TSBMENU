@@ -1,5 +1,6 @@
 local player = game:GetService("Players").LocalPlayer
 local uis = game:GetService("UserInputService")
+local runService = game:GetService("RunService")
 
 -- Удаляем старое GUI
 if player.PlayerGui:FindFirstChild("PishenakModernHub") then
@@ -12,38 +13,34 @@ sg.ResetOnSpawn = false
 
 -- ГЛАВНОЕ ОКНО
 local main = Instance.new("Frame", sg)
-main.Size = UDim2.new(0, 500, 0, 350)
-main.Position = UDim2.new(0.5, -250, 0.5, -175)
+main.Size = UDim2.new(0, 500, 0, 380)
+main.Position = UDim2.new(0.5, -250, 0.5, -190)
 main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 main.BorderSizePixel = 0
 main.Active = true
 main.Draggable = true
 Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
 
--- БОКОВАЯ ПАНЕЛЬ (Sidebar)
+-- БОКОВАЯ ПАНЕЛЬ
 local sidebar = Instance.new("Frame", main)
 sidebar.Size = UDim2.new(0, 130, 1, 0)
-sidebar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-sidebar.BorderSizePixel = 0
-local sideCorner = Instance.new("UICorner", sidebar)
-sideCorner.CornerRadius = UDim.new(0, 10)
+sidebar.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+Instance.new("UICorner", sidebar)
 
--- Заголовок в сайдбаре
 local hubTitle = Instance.new("TextLabel", sidebar)
 hubTitle.Size = UDim2.new(1, 0, 0, 50)
 hubTitle.Text = "PISHENAK HUB"
-hubTitle.TextColor3 = Color3.new(1, 1, 1)
+hubTitle.TextColor3 = Color3.fromRGB(0, 255, 127)
 hubTitle.Font = Enum.Font.GothamBold
 hubTitle.TextSize = 14
 hubTitle.BackgroundTransparency = 1
 
--- КОНТЕНТНАЯ ЧАСТЬ (Справа)
+-- КОНТЕНТНАЯ ЧАСТЬ
 local container = Instance.new("Frame", main)
 container.Size = UDim2.new(1, -140, 1, -20)
 container.Position = UDim2.new(0, 135, 0, 10)
 container.BackgroundTransparency = 1
 
--- Списки разделов (Для примера сделаем пока один общий)
 local page = Instance.new("ScrollingFrame", container)
 page.Size = UDim2.new(1, 0, 1, 0)
 page.BackgroundTransparency = 1
@@ -52,7 +49,7 @@ page.ScrollBarThickness = 2
 local layout = Instance.new("UIListLayout", page)
 layout.Padding = UDim.new(0, 8)
 
--- ФУНКЦИЯ СОЗДАНИЯ ПЕРЕКЛЮЧАТЕЛЯ (Toggle)
+-- ФУНКЦИИ ИНТЕРФЕЙСА
 local function addToggle(text, default, callback)
     local frame = Instance.new("Frame", page)
     frame.Size = UDim2.new(1, -5, 0, 40)
@@ -63,27 +60,26 @@ local function addToggle(text, default, callback)
     label.Size = UDim2.new(0.7, 0, 1, 0)
     label.Position = UDim2.new(0, 10, 0, 0)
     label.Text = text
-    label.TextColor3 = Color3.new(0.8, 0.8, 0.8)
+    label.TextColor3 = Color3.new(0.9, 0.9, 0.9)
     label.Font = Enum.Font.Gotham
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.BackgroundTransparency = 1
 
     local btn = Instance.new("TextButton", frame)
-    btn.Size = UDim2.new(0, 50, 0, 24)
-    btn.Position = UDim2.new(1, -60, 0.5, -12)
-    btn.BackgroundColor3 = default and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(60, 60, 60)
+    btn.Size = UDim2.new(0, 44, 0, 22)
+    btn.Position = UDim2.new(1, -54, 0.5, -11)
+    btn.BackgroundColor3 = default and Color3.fromRGB(0, 255, 127) or Color3.fromRGB(60, 60, 60)
     btn.Text = ""
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 12)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 11)
 
     local state = default
     btn.MouseButton1Click:Connect(function()
         state = not state
-        btn.BackgroundColor3 = state and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(60, 60, 60)
+        btn.BackgroundColor3 = state and Color3.fromRGB(0, 255, 127) or Color3.fromRGB(60, 60, 60)
         callback(state)
     end)
 end
 
--- ФУНКЦИЯ СОЗДАНИЯ КНОПКИ (Button)
 local function addAction(text, callback)
     local btn = Instance.new("TextButton", page)
     btn.Size = UDim2.new(1, -5, 0, 35)
@@ -95,14 +91,59 @@ local function addAction(text, callback)
     btn.MouseButton1Click:Connect(callback)
 end
 
--- НАПОЛНЕНИЕ ФУНКЦИЯМИ
+--------------------------------------------------
+-- ЛОГИКА ПОЛЕТА (РУЧНОЕ УПРАВЛЕНИЕ)
+--------------------------------------------------
+local flySpeed = 50
+local flyConnection
+
+local function toggleFly(active)
+    _G.Flying = active
+    local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    if _G.Flying then
+        local bv = Instance.new("BodyVelocity", root)
+        bv.Name = "FlyVel"
+        bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bv.Velocity = Vector3.new(0, 0, 0)
+
+        local bg = Instance.new("BodyGyro", root)
+        bg.Name = "FlyGyro"
+        bg.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+        bg.P = 9e4
+
+        flyConnection = runService.RenderStepped:Connect(function()
+            local cam = workspace.CurrentCamera
+            local direction = Vector3.new(0, 0, 0)
+
+            if uis:IsKeyDown(Enum.KeyCode.W) then direction = direction + cam.CFrame.LookVector end
+            if uis:IsKeyDown(Enum.KeyCode.S) then direction = direction - cam.CFrame.LookVector end
+            if uis:IsKeyDown(Enum.KeyCode.A) then direction = direction - cam.CFrame.RightVector end
+            if uis:IsKeyDown(Enum.KeyCode.D) then direction = direction + cam.CFrame.RightVector end
+            if uis:IsKeyDown(Enum.KeyCode.Space) then direction = direction + Vector3.new(0, 1, 0) end
+            if uis:IsKeyDown(Enum.KeyCode.LeftControl) then direction = direction - Vector3.new(0, 1, 0) end
+
+            bv.Velocity = direction.Unit * (direction.Magnitude > 0 and flySpeed or 0)
+            bg.CFrame = cam.CFrame
+        end)
+    else
+        if flyConnection then flyConnection:Disconnect() end
+        if root:FindFirstChild("FlyVel") then root.FlyVel:Destroy() end
+        if root:FindFirstChild("FlyGyro") then root.FlyGyro:Destroy() end
+    end
+end
+
+--------------------------------------------------
+-- КОНТЕНТ
+--------------------------------------------------
+addToggle("Manual Fly (Полет)", false, function(v) toggleFly(v) end)
+
 addToggle("No Cooldown", false, function(v)
     _G.NoCD = v
     task.spawn(function()
         while _G.NoCD do
-            pcall(function()
-                player.Character:SetAttribute("Cooldown", 0)
-            end)
+            pcall(function() player.Character:SetAttribute("Cooldown", 0) end)
             task.wait(0.1)
         end
     end)
@@ -138,14 +179,22 @@ addToggle("RGB ESP", false, function(v)
     end)
 end)
 
-addAction("Teleport to Trash", function()
+addAction("Телепорт к игроку", function()
+    local players = game.Players:GetPlayers()
+    if #players > 1 then
+        local target = players[math.random(1, #players)]
+        while target == player do target = players[math.random(1, #players)] end
+        if target.Character then player.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0) end
+    end
+end)
+
+addAction("Телепорт к мусорке", function()
     local root = player.Character:FindFirstChild("HumanoidRootPart")
-    local target = nil
-    local minDist = 999999
+    local target, minDist = nil, 999999
     for _, v in pairs(workspace:GetDescendants()) do
         if v.Name:lower():find("trash") and v:IsA("BasePart") then
             local d = (root.Position - v.Position).Magnitude
-            if d < minDist then minDist = d target = v end
+            if d < minDist then minDist, target = d, v end
         end
     end
     if target then root.CFrame = target.CFrame + Vector3.new(0, 3, 0) end
@@ -158,7 +207,6 @@ addAction("FPS Booster", function()
     end
 end)
 
--- СКРЫТИЕ (L)
 uis.InputBegan:Connect(function(k, g)
     if not g and k.KeyCode == Enum.KeyCode.L then main.Visible = not main.Visible end
 end)

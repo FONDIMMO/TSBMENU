@@ -1,147 +1,176 @@
 --[[
-    VOID HUB v20 // STABLE FOR XENO
-    GitHub Repository Version
+    VOID HUB v21 // ULTIMATE OVERLORD
+    - Дизайн: Premium Neon Void
+    - Функции: Fly, Speed, Kill Aura, Ult Tracker (FIXED)
+    - Скрытие: Клавиша [L]
 ]]
 
-local Players = game:GetService("Players")
-local lp = Players.LocalPlayer
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
+local p = game:GetService("Players")
+local lp = p.LocalPlayer
+local rs = game:GetService("RunService")
+local uis = game:GetService("UserInputService")
+local coreGui = game:GetService("CoreGui")
 
--- Пытаемся поместить GUI в безопасное место
-local Parent = nil
-pcall(function()
-    Parent = game:GetService("CoreGui")
-end)
-if not Parent then Parent = lp:WaitForChild("PlayerGui") end
-
--- Очистка старого меню
-if Parent:FindFirstChild("VoidXeno_v19") then
-    Parent.VoidXeno_v19:Destroy()
+-- Очистка старых версий
+for _, v in pairs(coreGui:GetChildren()) do
+    if v.Name == "Void_v20" then v:Destroy() end
 end
 
-local sg = Instance.new("ScreenGui", Parent)
-sg.Name = "VoidXeno_v19"
-sg.ResetOnSpawn = false
+local sg = Instance.new("ScreenGui", coreGui)
+sg.Name = "Void_v20"
 
--- ГЛАВНОЕ ОКНО
+-- [ ГЛАВНОЕ МЕНЮ - КРАСИВЫЙ ДИЗАЙН ]
 local main = Instance.new("Frame", sg)
-main.Size = UDim2.new(0, 400, 0, 450)
-main.Position = UDim2.new(0.5, -200, 0.5, -225)
-main.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+main.Size = UDim2.new(0, 480, 0, 520)
+main.Position = UDim2.new(0.5, -240, 0.5, -260)
+main.BackgroundColor3 = Color3.fromRGB(8, 8, 12)
+main.BorderSizePixel = 0
 main.Active = true
-main.Draggable = true -- В Xeno должно работать
+main.Draggable = true
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 15)
 
-local title = Instance.new("TextLabel", main)
-title.Size = UDim2.new(1, 0, 0, 40)
-title.Text = "VOID HUB v20 // TSB"
+-- Неоновая обводка
+local stroke = Instance.new("UIStroke", main)
+stroke.Color = Color3.fromRGB(138, 43, 226)
+stroke.Thickness = 2
+
+-- Шапка
+local head = Instance.new("Frame", main)
+head.Size = UDim2.new(1, 0, 0, 50)
+head.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+Instance.new("UICorner", head)
+
+local title = Instance.new("TextLabel", head)
+title.Size = UDim2.new(1, 0, 1, 0)
+title.Text = "VOID HUB v20 // XENO"
 title.TextColor3 = Color3.fromRGB(138, 43, 226)
-title.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 title.Font = Enum.Font.GothamBold
-title.TextSize = 18
+title.TextSize = 20; title.BackgroundTransparency = 1
 
-local list = Instance.new("ScrollingFrame", main)
-list.Size = UDim2.new(1, -20, 1, -60)
-list.Position = UDim2.new(0, 10, 0, 50)
-list.BackgroundTransparency = 1
-list.CanvasSize = UDim2.new(0, 0, 1.5, 0)
-local layout = Instance.new("UIListLayout", list); layout.Padding = UDim.new(0, 5)
+-- Скролл для кнопок
+local scroll = Instance.new("ScrollingFrame", main)
+scroll.Size = UDim2.new(1, -20, 1, -70)
+scroll.Position = UDim2.new(0, 10, 0, 60)
+scroll.BackgroundTransparency = 1
+scroll.ScrollBarThickness = 2
+scroll.CanvasSize = UDim2.new(0, 0, 1.5, 0)
+local layout = Instance.new("UIListLayout", scroll); layout.Padding = UDim.new(0, 8)
 
--- ФУНКЦИЯ КНОПКИ
-local function createToggle(name, callback)
-    local b = Instance.new("TextButton", list)
-    b.Size = UDim2.new(1, 0, 0, 40)
-    b.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-    b.Text = name
-    b.TextColor3 = Color3.new(1, 1, 1)
-    b.Font = Enum.Font.Gotham
+-- Функция создания красивых кнопок
+local function makeBtn(name, desc, color, callback)
+    local b = Instance.new("TextButton", scroll)
+    b.Size = UDim2.new(1, 0, 0, 55)
+    b.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    b.Text = ""
+    Instance.new("UICorner", b)
     
+    local t = Instance.new("TextLabel", b)
+    t.Size = UDim2.new(1, -20, 0, 25); t.Position = UDim2.new(0, 15, 0, 5)
+    t.Text = name; t.TextColor3 = color; t.Font = Enum.Font.GothamBold; t.TextSize = 14; t.TextXAlignment = 0; t.BackgroundTransparency = 1
+    
+    local d = Instance.new("TextLabel", b)
+    d.Size = UDim2.new(1, -20, 0, 20); d.Position = UDim2.new(0, 15, 0, 25)
+    d.Text = desc; d.TextColor3 = Color3.new(0.5, 0.5, 0.5); d.Font = Enum.Font.Gotham; d.TextSize = 10; d.TextXAlignment = 0; d.BackgroundTransparency = 1
+
     local active = false
     b.MouseButton1Click:Connect(function()
         active = not active
-        b.BackgroundColor3 = active and Color3.fromRGB(138, 43, 226) or Color3.fromRGB(25, 25, 30)
+        b.BackgroundColor3 = active and Color3.fromRGB(35, 35, 50) or Color3.fromRGB(20, 20, 30)
         callback(active)
     end)
 end
 
 --------------------------------------------------
--- ФУНКЦИОНАЛ
+-- ФУНКЦИИ
 --------------------------------------------------
 
--- 1. Ultimate Tracker
-createToggle("Ultimate Tracker", function(state)
-    _G.ShowUlt = state
-    RunService.RenderStepped:Connect(function()
-        if _G.ShowUlt then
-            for _, v in pairs(Players:GetPlayers()) do
-                if v ~= lp and v.Character and v.Character:FindFirstChild("Head") then
-                    local head = v.Character.Head
-                    if not head:FindFirstChild("UltView") then
-                        local b = Instance.new("BillboardGui", head)
-                        b.Name = "UltView"
-                        b.Size = UDim2.new(0, 80, 0, 15)
-                        b.AlwaysOnTop = true
-                        b.ExtentsOffset = Vector3.new(0, 3, 0)
-                        local f = Instance.new("Frame", b)
-                        f.Size = UDim2.new(1, 0, 1, 0)
-                        f.BackgroundColor3 = Color3.new(1, 0, 0)
-                        Instance.new("UICorner", f)
-                    end
-                end
-            end
-        else
-            -- Удаление при выключении
-            for _, v in pairs(Players:GetPlayers()) do
-                if v.Character and v.Character:FindFirstChild("Head") and v.Character.Head:FindFirstChild("UltView") then
-                    v.Character.Head.UltView:Destroy()
-                end
-            end
+-- 1. ПОЛЕТ (FLY)
+local flying = false
+local flySpeed = 50
+makeBtn("VOID FLY", "Свободный полет (W/A/S/D)", Color3.new(0, 1, 1), function(t)
+    flying = t
+    local bv = lp.Character.HumanoidRootPart:FindFirstChild("VoidFlyBV") or Instance.new("BodyVelocity", lp.Character.HumanoidRootPart)
+    bv.Name = "VoidFlyBV"
+    bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    
+    task.spawn(function()
+        while flying do
+            local dir = workspace.CurrentCamera.CFrame.LookVector
+            local move = Vector3.new(0,0,0)
+            if uis:IsKeyDown(Enum.KeyCode.W) then move = move + dir end
+            if uis:IsKeyDown(Enum.KeyCode.S) then move = move - dir end
+            bv.Velocity = move * flySpeed
+            task.wait()
         end
+        bv.Velocity = Vector3.new(0,0,0)
+        if not flying then bv:Destroy() end
     end)
 end)
 
--- 2. Cooldown Viewer (Анимационный детектор)
-createToggle("Cooldown Viewer", function(state)
-    _G.ShowCD = state
-    RunService.RenderStepped:Connect(function()
-        if _G.ShowCD then
-            for _, v in pairs(Players:GetPlayers()) do
-                if v ~= lp and v.Character and v.Character:FindFirstChild("Humanoid") then
-                    local anims = v.Character.Humanoid:GetPlayingAnimationTracks()
-                    if #anims > 0 then
-                        -- Если видим анимацию атаки — вешаем метку
-                        local head = v.Character.Head
-                        if not head:FindFirstChild("CDView") then
-                            local b = Instance.new("BillboardGui", head)
-                            b.Name = "CDView"; b.Size = UDim2.new(0, 100, 0, 20); b.AlwaysOnTop = true
-                            b.ExtentsOffset = Vector3.new(0, 4.5, 0)
-                            local t = Instance.new("TextLabel", b)
-                            t.Size = UDim2.new(1,0,1,0); t.Text = "MOVES USED"; t.TextColor3 = Color3.new(1,1,0); t.BackgroundTransparency = 1
-                        end
-                    end
+-- 2. KILL AURA (TSB)
+local aura = false
+makeBtn("KILL AURA", "Авто-атака ближайших целей", Color3.new(1, 0, 0), function(t)
+    aura = t
+    while aura do
+        pcall(function()
+            for _, v in pairs(p:GetPlayers()) do
+                if v ~= lp and v.Character and (lp.Character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).Magnitude < 15 then
+                    local tool = lp.Character:FindFirstChildOfClass("Tool") or lp.Backpack:FindFirstChild("Combat")
+                    if tool then tool:Activate() end
                 end
             end
-        end
-    end)
-end)
-
--- 3. ESP
-createToggle("Void ESP", function(state)
-    for _, v in pairs(Players:GetPlayers()) do
-        if v ~= lp and v.Character then
-            if state then
-                local h = Instance.new("Highlight", v.Character)
-                h.Name = "VHighlight"; h.FillColor = Color3.fromRGB(138, 43, 226)
-            else
-                if v.Character:FindFirstChild("VHighlight") then v.Character.VHighlight:Destroy() end
-            end
-        end
+        end)
+        task.wait(0.1)
     end
 end)
 
+-- 3. ULTIMATE TRACKER (FIXED)
+local showUlt = false
+makeBtn("ULT TRACKER", "Показывает прогресс ульты врага", Color3.new(1, 1, 0), function(t)
+    showUlt = t
+    rs.RenderStepped:Connect(function()
+        if not showUlt then return end
+        for _, v in pairs(p:GetPlayers()) do
+            if v ~= lp and v.Character and v.Character:FindFirstChild("Head") then
+                -- Пытаемся найти значение ульты в разных местах (зависит от игры)
+                local uVal = v:FindFirstChild("Ultimate") or v:FindFirstChild("UltimateValue") or v:FindFirstChild("leaderstats") and v.leaderstats:FindFirstChild("Ultimate")
+                
+                local head = v.Character.Head
+                local gui = head:FindFirstChild("VoidUlt") or Instance.new("BillboardGui", head)
+                gui.Name = "VoidUlt"; gui.Size = UDim2.new(0, 100, 0, 15); gui.AlwaysOnTop = true; gui.ExtentsOffset = Vector3.new(0, 3, 0)
+                
+                local bar = gui:FindFirstChild("Bar") or Instance.new("Frame", gui)
+                bar.Name = "Bar"; bar.Size = UDim2.new(1, 0, 1, 0); bar.BackgroundColor3 = Color3.new(0,0,0)
+                
+                local fill = bar:FindFirstChild("Fill") or Instance.new("Frame", bar)
+                fill.Name = "Fill"; fill.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+                
+                -- Если значение не найдено, ставим 0, если найдено - вычисляем %
+                local val = uVal and (uVal.Value / 100) or 0
+                fill.Size = UDim2.new(math.clamp(val, 0, 1), 0, 1, 0)
+            end
+        end
+    end)
+end)
+
+-- 4. SPEED HACK
+local sEnable = false
+makeBtn("VOID SPEED", "Ускорение персонажа", Color3.new(0, 1, 0), function(t)
+    sEnable = t
+    task.spawn(function()
+        while sEnable do
+            if lp.Character and lp.Character:FindFirstChild("Humanoid") then
+                lp.Character.Humanoid.WalkSpeed = 60
+            end
+            task.wait(0.1)
+        end
+        lp.Character.Humanoid.WalkSpeed = 16
+    end)
+end)
+
 -- Скрытие на L
-UserInputService.InputBegan:Connect(function(i, g)
+uis.InputBegan:Connect(function(i, g)
     if not g and i.KeyCode == Enum.KeyCode.L then main.Visible = not main.Visible end
 end)
 
-print("VOID HUB v20 LOADED FROM GITHUB SOURCE")
+print("VOID HUB v20 PRENIUM LOADED")

@@ -1,88 +1,123 @@
 --[[
-    VOID HUB v19 // LITE VERSION
-    Если не запускается: проверь консоль F9
+    VOID HUB v20 // STABLE FOR XENO
+    GitHub Repository Version
 ]]
 
-local p = game:GetService("Players")
-local lp = p.LocalPlayer
-local rs = game:GetService("RunService")
-local uis = game:GetService("UserInputService")
-local coreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+local lp = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
--- Прямая проверка на запуск
-print("VOID LITE: Инициализация...")
+-- Пытаемся поместить GUI в безопасное место
+local Parent = nil
+pcall(function()
+    Parent = game:GetService("CoreGui")
+end)
+if not Parent then Parent = lp:WaitForChild("PlayerGui") end
 
 -- Очистка старого меню
-if coreGui:FindFirstChild("VoidTSB_Xeno") then
-    coreGui.VoidTSB_Xeno:Destroy()
+if Parent:FindFirstChild("VoidXeno_v19") then
+    Parent.VoidXeno_v19:Destroy()
 end
 
-local sg = Instance.new("ScreenGui")
-sg.Name = "VoidTSB_Xeno"
-sg.Parent = coreGui
+local sg = Instance.new("ScreenGui", Parent)
+sg.Name = "VoidXeno_v19"
 sg.ResetOnSpawn = false
 
 -- ГЛАВНОЕ ОКНО
 local main = Instance.new("Frame", sg)
-main.Size = UDim2.new(0, 500, 0, 400)
-main.Position = UDim2.new(0.5, -250, 0.5, -200)
-main.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+main.Size = UDim2.new(0, 400, 0, 450)
+main.Position = UDim2.new(0.5, -200, 0.5, -225)
+main.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
 main.Active = true
-main.Draggable = true -- Теперь точно можно двигать
+main.Draggable = true -- В Xeno должно работать
 
-local layout = Instance.new("UIListLayout", main)
-layout.Padding = UDim.new(0, 5)
-layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1, 0, 0, 40)
+title.Text = "VOID HUB v20 // TSB"
+title.TextColor3 = Color3.fromRGB(138, 43, 226)
+title.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+
+local list = Instance.new("ScrollingFrame", main)
+list.Size = UDim2.new(1, -20, 1, -60)
+list.Position = UDim2.new(0, 10, 0, 50)
+list.BackgroundTransparency = 1
+list.CanvasSize = UDim2.new(0, 0, 1.5, 0)
+local layout = Instance.new("UIListLayout", list); layout.Padding = UDim.new(0, 5)
 
 -- ФУНКЦИЯ КНОПКИ
-local function addBtn(name, callback)
-    local b = Instance.new("TextButton", main)
-    b.Size = UDim2.new(0, 480, 0, 40)
+local function createToggle(name, callback)
+    local b = Instance.new("TextButton", list)
+    b.Size = UDim2.new(1, 0, 0, 40)
+    b.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
     b.Text = name
-    b.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
     b.TextColor3 = Color3.new(1, 1, 1)
-    b.Font = Enum.Font.GothamBold
+    b.Font = Enum.Font.Gotham
     
-    local enabled = false
+    local active = false
     b.MouseButton1Click:Connect(function()
-        enabled = not enabled
-        b.BackgroundColor3 = enabled and Color3.fromRGB(138, 43, 226) or Color3.fromRGB(30, 30, 40)
-        callback(enabled)
+        active = not active
+        b.BackgroundColor3 = active and Color3.fromRGB(138, 43, 226) or Color3.fromRGB(25, 25, 30)
+        callback(active)
     end)
 end
 
--- КНОПКИ
-addBtn("KILL AURA", function(t)
-    _G.kAura = t
-    while _G.kAura do
-        pcall(function()
-            for _, v in pairs(p:GetPlayers()) do
-                if v ~= lp and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-                    if (lp.Character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).Magnitude < 15 then
-                        local tool = lp.Character:FindFirstChildOfClass("Tool") or lp.Backpack:FindFirstChild("Combat")
-                        if tool then tool:Activate() end
+--------------------------------------------------
+-- ФУНКЦИОНАЛ
+--------------------------------------------------
+
+-- 1. Ultimate Tracker
+createToggle("Ultimate Tracker", function(state)
+    _G.ShowUlt = state
+    RunService.RenderStepped:Connect(function()
+        if _G.ShowUlt then
+            for _, v in pairs(Players:GetPlayers()) do
+                if v ~= lp and v.Character and v.Character:FindFirstChild("Head") then
+                    local head = v.Character.Head
+                    if not head:FindFirstChild("UltView") then
+                        local b = Instance.new("BillboardGui", head)
+                        b.Name = "UltView"
+                        b.Size = UDim2.new(0, 80, 0, 15)
+                        b.AlwaysOnTop = true
+                        b.ExtentsOffset = Vector3.new(0, 3, 0)
+                        local f = Instance.new("Frame", b)
+                        f.Size = UDim2.new(1, 0, 1, 0)
+                        f.BackgroundColor3 = Color3.new(1, 0, 0)
+                        Instance.new("UICorner", f)
                     end
                 end
             end
-        end)
-        task.wait(0.1)
-    end
+        else
+            -- Удаление при выключении
+            for _, v in pairs(Players:GetPlayers()) do
+                if v.Character and v.Character:FindFirstChild("Head") and v.Character.Head:FindFirstChild("UltView") then
+                    v.Character.Head.UltView:Destroy()
+                end
+            end
+        end
+    end)
 end)
 
-addBtn("ULTIMATE TRACKER", function(t)
-    _G.UltTrack = t
-    rs.RenderStepped:Connect(function()
-        if _G.UltTrack then
-            for _, v in pairs(p:GetPlayers()) do
-                if v ~= lp and v.Character and v.Character:FindFirstChild("Head") then
-                    if not v.Character.Head:FindFirstChild("UltM") then
-                        local m = Instance.new("BillboardGui", v.Character.Head)
-                        m.Name = "UltM"
-                        m.Size = UDim2.new(0, 50, 0, 10)
-                        m.AlwaysOnTop = true
-                        local f = Instance.new("Frame", m)
-                        f.Size = UDim2.new(1, 0, 1, 0)
-                        f.BackgroundColor3 = Color3.new(1, 0, 0)
+-- 2. Cooldown Viewer (Анимационный детектор)
+createToggle("Cooldown Viewer", function(state)
+    _G.ShowCD = state
+    RunService.RenderStepped:Connect(function()
+        if _G.ShowCD then
+            for _, v in pairs(Players:GetPlayers()) do
+                if v ~= lp and v.Character and v.Character:FindFirstChild("Humanoid") then
+                    local anims = v.Character.Humanoid:GetPlayingAnimationTracks()
+                    if #anims > 0 then
+                        -- Если видим анимацию атаки — вешаем метку
+                        local head = v.Character.Head
+                        if not head:FindFirstChild("CDView") then
+                            local b = Instance.new("BillboardGui", head)
+                            b.Name = "CDView"; b.Size = UDim2.new(0, 100, 0, 20); b.AlwaysOnTop = true
+                            b.ExtentsOffset = Vector3.new(0, 4.5, 0)
+                            local t = Instance.new("TextLabel", b)
+                            t.Size = UDim2.new(1,0,1,0); t.Text = "MOVES USED"; t.TextColor3 = Color3.new(1,1,0); t.BackgroundTransparency = 1
+                        end
                     end
                 end
             end
@@ -90,23 +125,23 @@ addBtn("ULTIMATE TRACKER", function(t)
     end)
 end)
 
-addBtn("ESP VISION", function(t)
-    for _, v in pairs(p:GetPlayers()) do
+-- 3. ESP
+createToggle("Void ESP", function(state)
+    for _, v in pairs(Players:GetPlayers()) do
         if v ~= lp and v.Character then
-            if t then
+            if state then
                 local h = Instance.new("Highlight", v.Character)
-                h.Name = "VoidH"
-                h.FillColor = Color3.fromRGB(138, 43, 226)
+                h.Name = "VHighlight"; h.FillColor = Color3.fromRGB(138, 43, 226)
             else
-                if v.Character:FindFirstChild("VoidH") then v.Character.VoidH:Destroy() end
+                if v.Character:FindFirstChild("VHighlight") then v.Character.VHighlight:Destroy() end
             end
         end
     end
 end)
 
--- СКРЫТИЕ НА L
-uis.InputBegan:Connect(function(i, g)
+-- Скрытие на L
+UserInputService.InputBegan:Connect(function(i, g)
     if not g and i.KeyCode == Enum.KeyCode.L then main.Visible = not main.Visible end
 end)
 
-print("VOID LITE УСПЕШНО ЗАПУЩЕН!")
+print("VOID HUB v20 LOADED FROM GITHUB SOURCE")
